@@ -98,7 +98,8 @@ func (r *queryResolver) StoreRevenue(ctx context.Context, startDate *time.Time, 
 			COUNT(r.rental_id) as rentals_count
 		FROM store s
 		JOIN address a ON s.address_id = a.address_id
-		LEFT JOIN rental r ON s.store_id = r.store_id
+		LEFT JOIN inventory i ON s.store_id = i.store_id
+		LEFT JOIN rental r ON i.inventory_id = r.inventory_id
 		LEFT JOIN payment p ON r.rental_id = p.rental_id
 	`
 
@@ -166,9 +167,9 @@ func (r *queryResolver) MostRentedFilms(ctx context.Context, limit *int32, categ
 			f.film_id,
 			f.title,
 			f.description,
-			c.name as category,
-			COUNT(r.rental_id) as rentals_count,
-			COALESCE(SUM(p.amount), 0) as total_revenue
+			STRING_AGG(DISTINCT c.name, ', ') as category,
+			COUNT(DISTINCT r.rental_id) as rentals_count,
+			COALESCE(SUM(DISTINCT p.amount), 0) as total_revenue
 		FROM film f
 		JOIN film_category fc ON f.film_id = fc.film_id
 		JOIN category c ON fc.category_id = c.category_id
@@ -187,7 +188,7 @@ func (r *queryResolver) MostRentedFilms(ctx context.Context, limit *int32, categ
 	}
 
 	query += whereClause + `
-		GROUP BY f.film_id, f.title, f.description, c.name
+		GROUP BY f.film_id, f.title, f.description
 		ORDER BY rentals_count DESC
 		LIMIT $` + fmt.Sprintf("%d", len(args)+1)
 
@@ -250,7 +251,7 @@ func (r *queryResolver) ActiveRentals(ctx context.Context) ([]*model.Rental, err
 		JOIN film f ON i.film_id = f.film_id
 		JOIN film_category fc ON f.film_id = fc.film_id
 		JOIN category cat ON fc.category_id = cat.category_id
-		JOIN store s ON r.store_id = s.store_id
+		JOIN store s ON i.store_id = s.store_id
 		JOIN address a ON s.address_id = a.address_id
 		WHERE r.return_date IS NULL
 		ORDER BY r.rental_date DESC
@@ -322,7 +323,7 @@ func (r *queryResolver) LateRentals(ctx context.Context) ([]*model.Rental, error
 		JOIN film f ON i.film_id = f.film_id
 		JOIN film_category fc ON f.film_id = fc.film_id
 		JOIN category cat ON fc.category_id = cat.category_id
-		JOIN store s ON r.store_id = s.store_id
+		JOIN store s ON i.store_id = s.store_id
 		JOIN address a ON s.address_id = a.address_id
 		WHERE r.return_date IS NULL 
 		  AND r.rental_date + INTERVAL '7 days' < NOW()

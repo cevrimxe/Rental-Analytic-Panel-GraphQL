@@ -15,29 +15,29 @@ import StatsCards from './StatsCards';
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState({
-    startDate: '',
-    endDate: ''
+    startDate: '2022-02-01',
+    endDate: '2022-08-31'
   });
 
   const { data: statsData, loading: statsLoading } = useQuery(GET_DASHBOARD_STATS, {
     variables: {
-      startDate: dateRange.startDate || null,
-      endDate: dateRange.endDate || null
+      startDate: dateRange.startDate ? new Date(dateRange.startDate + 'T00:00:00Z').toISOString() : null,
+      endDate: dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59Z').toISOString() : null
     }
   });
 
   const { data: customersData, loading: customersLoading } = useQuery(GET_TOP_CUSTOMERS, {
     variables: {
       limit: 10,
-      startDate: dateRange.startDate || null,
-      endDate: dateRange.endDate || null
+      startDate: dateRange.startDate ? new Date(dateRange.startDate + 'T00:00:00Z').toISOString() : null,
+      endDate: dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59Z').toISOString() : null
     }
   });
 
   const { data: storeData, loading: storeLoading } = useQuery(GET_STORE_REVENUE, {
     variables: {
-      startDate: dateRange.startDate || null,
-      endDate: dateRange.endDate || null
+      startDate: dateRange.startDate ? new Date(dateRange.startDate + 'T00:00:00Z').toISOString() : null,
+      endDate: dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59Z').toISOString() : null
     }
   });
 
