@@ -72,6 +72,13 @@ type FilmStats {
   totalRevenue: Float!
 }
 
+type CategoryStats {
+  category: String!
+  totalRevenue: Float!
+  rentalsCount: Int!
+  filmsCount: Int!
+}
+
 type Query {
   # Top müşteriler
   topCustomers(limit: Int = 10, startDate: Time, endDate: Time): [CustomerStats!]!
@@ -81,6 +88,9 @@ type Query {
   
   # En çok kiralanan filmler
   mostRentedFilms(limit: Int = 10, category: String): [FilmStats!]!
+  
+  # Kategori gelirleri
+  categoryRevenue(startDate: Time, endDate: Time): [CategoryStats!]!
   
   # Aktif kiralamalar
   activeRentals: [Rental!]!

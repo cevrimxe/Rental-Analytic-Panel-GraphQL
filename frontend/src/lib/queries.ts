@@ -89,6 +89,17 @@ export const GET_LATE_RENTALS = gql`
   }
 `;
 
+export const GET_CATEGORY_REVENUE = gql`
+  query GetCategoryRevenue($startDate: Time, $endDate: Time) {
+    categoryRevenue(startDate: $startDate, endDate: $endDate) {
+      category
+      totalRevenue
+      rentalsCount
+      filmsCount
+    }
+  }
+`;
+
 export const GET_DASHBOARD_STATS = gql`
   query GetDashboardStats($startDate: Time, $endDate: Time) {
     totalRevenue(startDate: $startDate, endDate: $endDate)

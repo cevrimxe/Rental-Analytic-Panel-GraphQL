@@ -6,11 +6,13 @@ import {
   GET_TOP_CUSTOMERS, 
   GET_STORE_REVENUE, 
   GET_MOST_RENTED_FILMS, 
-  GET_DASHBOARD_STATS 
+  GET_DASHBOARD_STATS,
+  GET_CATEGORY_REVENUE 
 } from '@/lib/queries';
 import TopCustomersChart from './charts/TopCustomersChart';
 import StoreRevenueChart from './charts/StoreRevenueChart';
 import MostRentedFilmsChart from './charts/MostRentedFilmsChart';
+import CategoryRevenueChart from './charts/CategoryRevenueChart';
 import StatsCards from './StatsCards';
 
 export default function Dashboard() {
@@ -44,6 +46,13 @@ export default function Dashboard() {
   const { data: filmsData, loading: filmsLoading } = useQuery(GET_MOST_RENTED_FILMS, {
     variables: {
       limit: 10
+    }
+  });
+
+  const { data: categoryData, loading: categoryLoading } = useQuery(GET_CATEGORY_REVENUE, {
+    variables: {
+      startDate: dateRange.startDate ? new Date(dateRange.startDate + 'T00:00:00Z').toISOString() : null,
+      endDate: dateRange.endDate ? new Date(dateRange.endDate + 'T23:59:59Z').toISOString() : null
     }
   });
 
@@ -112,6 +121,14 @@ export default function Dashboard() {
               Mağaza Gelirleri
             </h2>
             <StoreRevenueChart data={storeData || null} loading={storeLoading} />
+          </div>
+
+          {/* Category Revenue */}
+          <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Kategori Gelirleri
+            </h2>
+            <CategoryRevenueChart data={categoryData || null} loading={categoryLoading} />
           </div>
 
           {/* Most Rented Films */}

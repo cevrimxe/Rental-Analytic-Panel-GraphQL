@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+type CategoryStats struct {
+	Category     string  `json:"category"`
+	TotalRevenue float64 `json:"totalRevenue"`
+	RentalsCount int32   `json:"rentalsCount"`
+	FilmsCount   int32   `json:"filmsCount"`
+}
+
 type Customer struct {
 	ID            string     `json:"id"`
 	FirstName     string     `json:"firstName"`

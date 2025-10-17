@@ -228,6 +228,68 @@ func (r *queryResolver) MostRentedFilms(ctx context.Context, limit *int32, categ
 	return filmStats, nil
 }
 
+// CategoryRevenue is the resolver for the categoryRevenue field.
+func (r *queryResolver) CategoryRevenue(ctx context.Context, startDate *time.Time, endDate *time.Time) ([]*model.CategoryStats, error) {
+	query := `
+		SELECT 
+			c.name as category,
+			COALESCE(SUM(p.amount), 0) as total_revenue,
+			COUNT(DISTINCT r.rental_id) as rentals_count,
+			COUNT(DISTINCT f.film_id) as films_count
+		FROM category c
+		LEFT JOIN film_category fc ON c.category_id = fc.category_id
+		LEFT JOIN film f ON fc.film_id = f.film_id
+		LEFT JOIN inventory i ON f.film_id = i.film_id
+		LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+		LEFT JOIN payment p ON r.rental_id = p.rental_id
+	`
+
+	args := []interface{}{}
+	whereClause := ""
+
+	// Tarih filtresi ekle
+	if startDate != nil && endDate != nil {
+		whereClause = " WHERE r.rental_date BETWEEN $1 AND $2"
+		args = append(args, *startDate, *endDate)
+	} else if startDate != nil {
+		whereClause = " WHERE r.rental_date >= $1"
+		args = append(args, *startDate)
+	} else if endDate != nil {
+		whereClause = " WHERE r.rental_date <= $1"
+		args = append(args, *endDate)
+	}
+
+	query += whereClause + `
+		GROUP BY c.category_id, c.name
+		ORDER BY total_revenue DESC`
+
+	rows, err := r.DB.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("veritabanı sorgusu hatası: %w", err)
+	}
+	defer rows.Close()
+
+	var categoryStats []*model.CategoryStats
+	for rows.Next() {
+		var stat model.CategoryStats
+		var rentalsCount, filmsCount int32
+		err := rows.Scan(
+			&stat.Category,
+			&stat.TotalRevenue,
+			&rentalsCount,
+			&filmsCount,
+		)
+		stat.RentalsCount = rentalsCount
+		stat.FilmsCount = filmsCount
+		if err != nil {
+			return nil, fmt.Errorf("satır okuma hatası: %w", err)
+		}
+		categoryStats = append(categoryStats, &stat)
+	}
+
+	return categoryStats, nil
+}
+
 // ActiveRentals is the resolver for the activeRentals field.
 func (r *queryResolver) ActiveRentals(ctx context.Context) ([]*model.Rental, error) {
 	query := `
