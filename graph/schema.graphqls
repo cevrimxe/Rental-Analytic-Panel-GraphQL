@@ -1,0 +1,95 @@
+# Rental Analytics GraphQL Schema
+# Pagila veritabanı için tasarlanmış
+
+scalar Time
+
+type Customer {
+  id: ID!
+  firstName: String!
+  lastName: String!
+  email: String!
+  totalPayments: Float!
+  rentalCount: Int!
+  lastRental: Time
+}
+
+type Store {
+  id: ID!
+  address: String!
+  totalRevenue: Float!
+  rentalCount: Int!
+  monthlyRevenue: [MonthlyRevenue!]!
+}
+
+type MonthlyRevenue {
+  month: String!
+  revenue: Float!
+}
+
+type Film {
+  id: ID!
+  title: String!
+  description: String
+  category: String!
+  rentalCount: Int!
+  totalRevenue: Float!
+}
+
+type Rental {
+  id: ID!
+  customer: Customer!
+  film: Film!
+  store: Store!
+  rentalDate: Time!
+  returnDate: Time
+  isLate: Boolean!
+}
+
+type Payment {
+  id: ID!
+  customer: Customer!
+  rental: Rental!
+  amount: Float!
+  paymentDate: Time!
+}
+
+# Analytics için özel tipler
+type CustomerStats {
+  customer: Customer!
+  totalSpent: Float!
+  rentalsCount: Int!
+}
+
+type StoreStats {
+  store: Store!
+  totalRevenue: Float!
+  rentalsCount: Int!
+}
+
+type FilmStats {
+  film: Film!
+  rentalsCount: Int!
+  totalRevenue: Float!
+}
+
+type Query {
+  # Top müşteriler
+  topCustomers(limit: Int = 10, startDate: Time, endDate: Time): [CustomerStats!]!
+  
+  # Mağaza gelirleri
+  storeRevenue(startDate: Time, endDate: Time): [StoreStats!]!
+  
+  # En çok kiralanan filmler
+  mostRentedFilms(limit: Int = 10, category: String): [FilmStats!]!
+  
+  # Aktif kiralamalar
+  activeRentals: [Rental!]!
+  
+  # Geç kalan kiralamalar
+  lateRentals: [Rental!]!
+  
+  # Genel istatistikler
+  totalRevenue(startDate: Time, endDate: Time): Float!
+  totalCustomers: Int!
+  totalFilms: Int!
+}

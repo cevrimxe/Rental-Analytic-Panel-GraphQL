@@ -1,0 +1,80 @@
+volumes:
+  pgdata:
+
+networks:
+  rental_network:
+    driver: bridge
+
+services:
+  # PostgreSQL Database with Pagila
+  pagila:
+    image: postgres:17
+    container_name: pagila
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_USER: postgres
+    volumes:
+      - ./database/pagila/pagila-schema.sql:/docker-entrypoint-initdb.d/1-pagila-schema.sql
+      - ./database/pagila/pagila-schema-jsonb.sql:/docker-entrypoint-initdb.d/1-pagila-schema-jsonb.sql
+      - ./database/pagila/pagila-data.sql:/docker-entrypoint-initdb.d/2-pagila-data.sql
+      - ./database/pagila/restore-pagila-data-jsonb.sh:/docker-entrypoint-initdb.d/3-restore-pagila-data-jsonb.sh
+      - ./database/pagila/pagila-data-yum-jsonb.backup:/docker-entrypoint-initdb.d/pagila-data-yum-jsonb.backup
+      - ./database/pagila/pagila-data-apt-jsonb.backup:/docker-entrypoint-initdb.d/pagila-data-apt-jsonb.backup
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    networks:
+      - rental_network
+
+  # pgAdmin
+  pgadmin:
+    container_name: pgadmin4
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    volumes:
+      - "./database/pagila/pgadmin/pgadmin_servers.json:/pgadmin4/servers.json"
+      - "./database/pagila/pgadmin/pgadmin_pass:/pgadmin4/pass"
+    ports:
+      - "5050:80"
+    depends_on:
+      - pagila
+    networks:
+      - rental_network
+
+  # Go GraphQL Backend
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: rental_analytics_backend
+    environment:
+      # Pagila database bağlantısı (aynı network içinde)
+      DATABASE_URL: "postgresql://postgres:123456@pagila:5432/postgres?sslmode=disable"
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - pagila
+    networks:
+      - rental_network
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rental_analytics_frontend
+    environment:
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:8080/query
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - rental_network
